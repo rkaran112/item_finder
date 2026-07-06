@@ -1,5 +1,6 @@
 from flask import Flask, render_template_string, request, send_file, flash, redirect, url_for
 import os
+import re
 from werkzeug.utils import secure_filename
 from agent import process_excel
 
@@ -104,6 +105,10 @@ def process():
 
 @app.route('/download/<filename>')
 def download(filename):
+    # Only allow filenames matching the format we generate ourselves in
+    # process_excel(), to prevent path traversal via arbitrary filenames.
+    if not re.fullmatch(r'search_results_\d{8}_\d{6}\.xlsx', filename):
+        return "Invalid filename.", 400
     return send_file(filename, as_attachment=True)
 
 if __name__ == '__main__':
