@@ -1,104 +1,69 @@
-# Product Search Agent
+# Item Finder (Product Search Agent)
 
-This Python script is an automated agent that reads a list of products from an Excel file and searches the internet to find those exact items on e-commerce websites (like Amazon and Flipkart). It then acts like a human reviewer: it compares the name of the product you searched for with the name of the product it found, calculates a **similarity score**, and determines if the result needs a human to double-check it.
+A Python tool that takes a spreadsheet of products and automatically finds matching listings for them on Amazon and Flipkart, flagging each match with a confidence score.
 
----
+## What It Does
 
-## � Getting Started (How to Install & Run from GitHub)
+You give it an Excel file with a `GeM Title`, `GeM Brand`, and `GeM Model` column per row (the column names come from India's GeM government procurement portal, but any spreadsheet with those headers works). For each row, it:
 
-Follow these simple steps if you are downloading this project from GitHub onto your computer:
+1. Builds a search query from the brand, model, and title (e.g. `Acer AL15 52 Acer Aspire Lite AL15 amazon OR flipkart`).
+2. Runs that query through DuckDuckGo search (via the `ddgs` library) and keeps only results linking to `amazon.in` or `flipkart.com`.
+3. Scores each candidate result's title against the target text using `difflib.SequenceMatcher` and keeps the best match.
+4. Labels the row based on the similarity score:
+   - `>= 0.45` → "Found, no need for human review"
+   - `0.20 - 0.45` → "Needs human review"
+   - `< 0.20` or no match → "Item not found"
+5. Writes a new timestamped Excel file (`search_results_<timestamp>.xlsx`) with the original data plus `Amazon/Flipkart Link`, `Similarity Score`, and `Review Status` columns.
 
-### Step 1: Download the Project
-You can either open your terminal and type this to clone the repository:
+There's a 2-second delay between searches to reduce the chance of getting rate-limited.
+
+Two ways to run it:
+- **`app.py`** — a small Flask web app with a drag-and-drop upload page; download the results file when processing finishes.
+- **`agent.py`** — a command-line version that prompts for an input file path (defaulting to `sample_products.xlsx`) and writes the results file to the working directory.
+
+## Tech Stack
+
+- **Python 3**
+- [pandas](https://pandas.pydata.org/) + [openpyxl](https://openpyxl.readthedocs.io/) — reading/writing `.xlsx` files
+- [ddgs](https://pypi.org/project/ddgs/) — DuckDuckGo search client
+- [Flask](https://flask.palletsprojects.com/) — web UI (`app.py`)
+- `difflib` (standard library) — string similarity scoring
+
+## Setup
+
 ```bash
-git clone <YOUR_GITHUB_REPO_URL>
-cd <YOUR_REPO_NAME>
-```
-*(Or simply click the green "Code" button on GitHub, select "Download ZIP", extract the folder to your computer, and open that folder in your terminal).*
-
-### Step 2: Install Python
-Make sure you have [Python](https://www.python.org/downloads/) installed on your computer. When installing Python (especially on Windows), make sure you check the box that says **"Add python.exe to PATH"**.
-
-### Step 3: Install Required Libraries
-This project relies on a few extra Python tools. Open your terminal (or Command Prompt) inside the downloaded project folder and run:
-```bash
+git clone https://github.com/rkaran112/item_finder.git
+cd item_finder
 pip install -r requirements.txt
 ```
-*(This command automatically installs `pandas`, `openpyxl`, `ddgs`, and `flask` for you).*
 
----
+Dependencies installed: `pandas`, `openpyxl`, `ddgs`, `flask`.
 
-## 🛠️ How to Use the Script
+## Usage
 
-You now have **two** ways to use this script: through a modern **HTML Visualizer (Web interface)**, or via the **Command Line**.
-
-### Option 1: The HTML Visualizer (Recommended)
-This gives you a beautifully formatted UI where you can just drag and drop files.
-
-1. **Run the App**: Open your terminal and run:
-   ```bash
-   python app.py
-   ```
-2. **Open your Browser**: The terminal will print a link that looks like this: `http://127.0.0.1:5000`. Click it or copy it into Chrome, Edge, Safari, etc.
-3. **Upload the file**: Click the box, select your `.xlsx` file, and hit "Start Search".
-4. **Download**: Once it finishes, it will generate a new unique Excel file equipped with a timestamp (like `search_results_20260422_153022.xlsx`) and give you a download button right away!
-
-### Option 2: The Command Line Route
-If you enjoy the matrix hacker vibes.
-
-1. **Run the script**: Open your terminal and run:
-   ```bash
-   python agent.py
-   ```
-2. **Follow the Prompt**: The script will instantly ask you: 
-   `Enter the path to your input Excel file (e.g., sample_products.xlsx) [Press Enter for default]:`
-   You can either type in the exact name of the file or just press **Enter** to default to `sample_products.xlsx`.
-3. **Check your folder**: The script will run through all the files, pausing slightly between each request to avoid being blocked by search engines. Once done, a brand new file like `search_results_20260422_153022.xlsx` will appear in your project folder. No more accidentally overwriting older search histories!
-
-*⚠️ IMPORTANT TIP: Make sure you DO NOT have the `search_results` file open in Microsoft Excel while the script is running. If the file is open, the script cannot save its new results and will crash with a "Permission denied" error.*
-
----
-
-## 📊 Input Excel Sheet Format
-
-For the script to understand your Excel sheet, the first row of your sheet MUST contain specific column names (exactly as written below, case-sensitive):
-
-| GeM Product ID | GeM Title | GeM Brand | GeM Model |
-| :--- | :--- | :--- | :--- |
-| (Any ID number) | Acer Aspire Lite AL15 | Acer | AL15 52 |
-| (Any ID number) | ProDot Toner Cartridge | ProDot | PLB-B021 |
-
-**Why these exact names?** 
-The script specifically looks for `GeM Title`, `GeM Brand`, and `GeM Model` to build its search. If your columns are named something else (like "Product Name" instead of "GeM Title"), the script won't know where to look. Other columns (like GeM Product ID) can be there, the script will just ignore them and pass them along to the final result file.
-
----
-
-## 🌐 How to Add a New Website to Search
-
-Right now, the script only looks for Amazon and Flipkart links. If you want to add another website (for example, **chroma.com** or **reliance.com**), you need to change **two lines of code** inside `agent.py`.
-
-Open `agent.py` in your code editor and look for the `search_product` function at the top.
-
-### **Change #1: Update the search query**
-Find this line:
-```python
-query = f"{brand} {model} {title} amazon OR flipkart"
+**Web UI:**
+```bash
+python app.py
 ```
-Change it to tell the search engine to also look for your new site. Just add an `OR` and your new website's name.
-*Example:*
-```python
-query = f"{brand} {model} {title} amazon OR flipkart OR chroma"
-```
+Then open `http://127.0.0.1:5000`, upload an `.xlsx` file, and download the results once processing finishes.
 
-### **Change #2: Update the link filter**
-Find this line:
-```python
-if 'amazon.in' in link or 'flipkart.com' in link:
+**Command line:**
+```bash
+python agent.py
 ```
-Change it to accept links that contain your new website's URL. 
-*Example:*
-```python
-if 'amazon.in' in link or 'flipkart.com' in link or 'chroma.com' in link:
-```
+Press Enter to use the bundled `sample_products.xlsx`, or type the path to your own file.
 
-Save the file, and the next time you run it, the agent will also hunt for products on your newly added website!
+**Required input columns** (case-sensitive): `GeM Title`, `GeM Brand`, `GeM Model`. Other columns are preserved but ignored for matching.
+
+## Status
+
+Functional prototype — the core search/match/export pipeline works end-to-end for both the CLI and web interfaces. Known rough edges:
+
+- **No column validation**: if the input Excel is missing `GeM Title`/`GeM Brand`/`GeM Model`, rows are processed with blank values rather than raising a clear error.
+- **Hardcoded Flask secret key** in `app.py` (`app.secret_key = "super_secret_key_for_flash_messages"`) — fine for local/demo use, not suitable for a real deployment.
+- **No file cleanup**: uploaded files and generated result files accumulate in `uploads/` and the project root; there's no expiry or deletion logic.
+- **No automated tests.**
+- **Search reliability depends on DuckDuckGo/`ddgs`** and is not resilient to search API changes, CAPTCHAs, or extended rate limiting beyond the fixed 2-second delay.
+- A previously generated `search_results.xlsx` is committed in the repo root, alongside the `sample_products.xlsx` test fixture.
+
+No packaging (e.g. `setup.py`/`pyproject.toml`) — it's run directly as scripts.
