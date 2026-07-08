@@ -19,6 +19,9 @@ search_results_*.xlsx
 .env
 .env.local
 
+# Pytest cache
+.pytest_cache/
+
 # IDE / Editor folders
 .vscode/
 .idea/

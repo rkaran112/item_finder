@@ -5,6 +5,15 @@ from difflib import SequenceMatcher
 from datetime import datetime
 import os
 
+def classify_score(score):
+    """Map a similarity score to a review status label."""
+    if score >= 0.45:
+        return "Found, no need for human review"
+    elif score >= 0.20:
+        return "Needs human review"
+    else:
+        return "Item not found"
+
 def search_product(title, brand, model):
     query = f"{brand} {model} {title} amazon OR flipkart"
     best_link = None
@@ -56,14 +65,7 @@ def process_excel(input_file):
             links.append(link)
             similarity_scores.append(round(score, 2))
             
-            # Use thresholds to determine review status
-            if score >= 0.45:
-                status = "Found, no need for human review"
-            elif score >= 0.20:
-                status = "Needs human review"
-            else:
-                status = "Item not found"
-            
+            status = classify_score(score)
             found_status.append(status)
             print(f" Score: {score:.2f} | Status: {status} | Link: {link}")
         else:
