@@ -59,7 +59,6 @@ Press Enter to use the bundled `sample_products.xlsx`, or type the path to your 
 
 Functional prototype — the core search/match/export pipeline works end-to-end for both the CLI and web interfaces. Known rough edges:
 
-- **No column validation**: if the input Excel is missing `GeM Title`/`GeM Brand`/`GeM Model`, rows are processed with blank values rather than raising a clear error.
 - **Hardcoded Flask secret key** in `app.py` (`app.secret_key = "super_secret_key_for_flash_messages"`) — fine for local/demo use, not suitable for a real deployment.
 - **No file cleanup**: uploaded files and generated result files accumulate in `uploads/` and the project root; there's no expiry or deletion logic.
 - **No automated tests.**

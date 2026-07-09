@@ -39,6 +39,8 @@ def search_product(title, brand, model):
         print(f"Error searching for {query}: {e}")
     return None, 0.0
 
+REQUIRED_COLUMNS = ('GeM Title', 'GeM Brand', 'GeM Model')
+
 def process_excel(input_file):
     print(f"Reading {input_file}...")
     try:
@@ -46,7 +48,12 @@ def process_excel(input_file):
     except Exception as e:
         print(f"Error reading file {input_file}: {e}")
         return None
-    
+
+    missing_columns = [col for col in REQUIRED_COLUMNS if col not in df.columns]
+    if missing_columns:
+        print(f"Error: input file is missing required column(s): {', '.join(missing_columns)}")
+        return None
+
     links = []
     found_status = []
     similarity_scores = []
