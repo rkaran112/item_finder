@@ -61,7 +61,7 @@ Functional prototype — the core search/match/export pipeline works end-to-end 
 
 - **Hardcoded Flask secret key** in `app.py` (`app.secret_key = "super_secret_key_for_flash_messages"`) — fine for local/demo use, not suitable for a real deployment.
 - **No file cleanup**: uploaded files and generated result files accumulate in `uploads/` and the project root; there's no expiry or deletion logic.
-- **Test coverage is partial**: `tests/` covers score classification, required-column validation, and the download route, but not `search_product`'s DuckDuckGo/similarity-matching logic.
+- **Test coverage is partial**: `tests/` covers score classification, required-column validation, the download route, and `search_product`'s link-filtering/best-match selection (via a mocked DDGS client), but there's still no coverage of `process_excel`'s end-to-end row loop.
 - **Search reliability depends on DuckDuckGo/`ddgs`** and is not resilient to search API changes, CAPTCHAs, or extended rate limiting beyond the fixed 2-second delay.
 - A previously generated `search_results.xlsx` is committed in the repo root, alongside the `sample_products.xlsx` test fixture.
 
