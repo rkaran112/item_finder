@@ -89,3 +89,35 @@ def test_search_product_returns_none_when_ddgs_raises(monkeypatch):
 
     assert link is None
     assert score == 0.0
+
+
+def test_process_excel_row_loop_populates_result_columns(tmp_xlsx, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(agent, 'sleep', lambda seconds: None)
+
+    input_file = tmp_xlsx({
+        'GeM Title': ['Widget X1', 'Gadget Y2'],
+        'GeM Brand': ['Acme', 'Beta'],
+        'GeM Model': ['X1', 'Y2'],
+    })
+
+    responses = {
+        ('Acme', 'X1', 'Widget X1'): ('https://www.amazon.in/dp/1', 0.9),
+        ('Beta', 'Y2', 'Gadget Y2'): (None, 0.0),
+    }
+    monkeypatch.setattr(
+        agent, 'search_product',
+        lambda title, brand, model: responses[(brand, model, title)],
+    )
+
+    output_file = process_excel(input_file)
+
+    assert output_file is not None
+    # keep_default_na=False so pandas doesn't read our literal "N/A" placeholder back as NaN
+    result = pd.read_excel(output_file, keep_default_na=False)
+    assert list(result['Amazon/Flipkart Link']) == ['https://www.amazon.in/dp/1', 'N/A']
+    assert list(result['Similarity Score']) == [0.9, 0.0]
+    assert list(result['Review Status']) == [
+        'Found, no need for human review',
+        'Item not found',
+    ]
