@@ -86,7 +86,7 @@ def process():
         flash('No file selected.', 'error')
         return redirect(url_for('index'))
         
-    if file and file.filename.endswith('.xlsx'):
+    if file and file.filename.lower().endswith('.xlsx'):
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)

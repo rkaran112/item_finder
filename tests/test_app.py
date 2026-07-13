@@ -1,7 +1,9 @@
+import io
 import os
 
 import pytest
 
+import app as app_module
 from app import app
 
 
@@ -10,6 +12,16 @@ def client():
     app.config['TESTING'] = True
     with app.test_client() as client:
         yield client
+
+
+def test_process_accepts_uppercase_xlsx_extension(client, monkeypatch):
+    monkeypatch.setattr(app_module, 'process_excel', lambda filepath: 'search_results_20240101_120000.xlsx')
+
+    data = {'file': (io.BytesIO(b'dummy content'), 'Products.XLSX')}
+    response = client.post('/process', data=data, content_type='multipart/form-data')
+
+    assert response.status_code == 200
+    assert b'Invalid file format' not in response.data
 
 
 @pytest.mark.parametrize('filename', [
