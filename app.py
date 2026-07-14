@@ -1,11 +1,14 @@
 from flask import Flask, render_template_string, request, send_file, flash, redirect, url_for
 import os
 import re
+import secrets
 from werkzeug.utils import secure_filename
 from agent import process_excel
 
 app = Flask(__name__)
-app.secret_key = "super_secret_key_for_flash_messages" # Needed for flash messages
+# Falls back to a random per-process key so local/dev runs still work without
+# any setup; set FLASK_SECRET_KEY for a stable key across restarts (e.g. prod).
+app.secret_key = os.environ.get('FLASK_SECRET_KEY') or secrets.token_hex(32)
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
