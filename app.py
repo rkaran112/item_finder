@@ -93,10 +93,14 @@ def process():
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
-        
-        # Run our automated agent
-        output_file = process_excel(filepath)
-        
+
+        try:
+            # Run our automated agent
+            output_file = process_excel(filepath)
+        finally:
+            # Don't let uploads pile up in the upload folder once we're done with them.
+            os.remove(filepath)
+
         if output_file:
             return render_template_string(HTML_TEMPLATE, output_file=output_file)
         else:

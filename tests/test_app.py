@@ -24,6 +24,17 @@ def test_process_accepts_uppercase_xlsx_extension(client, monkeypatch):
     assert b'Invalid file format' not in response.data
 
 
+def test_process_removes_uploaded_file_after_processing(client, monkeypatch):
+    monkeypatch.setattr(app_module, 'process_excel', lambda filepath: 'search_results_20240101_120000.xlsx')
+
+    data = {'file': (io.BytesIO(b'dummy content'), 'Products.xlsx')}
+    response = client.post('/process', data=data, content_type='multipart/form-data')
+
+    assert response.status_code == 200
+    uploaded_path = os.path.join(app.config['UPLOAD_FOLDER'], 'Products.xlsx')
+    assert not os.path.exists(uploaded_path)
+
+
 @pytest.mark.parametrize('filename', [
     'search_results.xlsx',
     'not_a_results_file.xlsx',

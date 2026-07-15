@@ -59,8 +59,8 @@ Press Enter to use the bundled `sample_products.xlsx`, or type the path to your 
 
 Functional prototype — the core search/match/export pipeline works end-to-end for both the CLI and web interfaces. Known rough edges:
 
-- **No file cleanup**: uploaded files and generated result files accumulate in `uploads/` and the project root; there's no expiry or deletion logic.
-- **Test coverage is partial**: `tests/` covers score classification, required-column validation, the download route, `search_product`'s link-filtering/best-match selection, and `process_excel`'s end-to-end row loop (all via mocked DDGS/search calls). Live network behavior against DuckDuckGo is untested.
+- **Generated result files aren't cleaned up**: each processed upload leaves a `search_results_<timestamp>.xlsx` behind in the project root; there's no expiry or deletion logic. (Uploaded files themselves are now removed from `uploads/` right after processing.)
+- **Test coverage is partial**: `tests/` covers score classification, required-column validation, the download route, upload cleanup, `search_product`'s link-filtering/best-match selection, and `process_excel`'s end-to-end row loop (all via mocked DDGS/search calls). Live network behavior against DuckDuckGo is untested.
 - **Search reliability depends on DuckDuckGo/`ddgs`** and is not resilient to search API changes, CAPTCHAs, or extended rate limiting beyond the fixed 2-second delay.
 - A previously generated `search_results.xlsx` is committed in the repo root, alongside the `sample_products.xlsx` test fixture.
 
