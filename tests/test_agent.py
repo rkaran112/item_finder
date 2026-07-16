@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 import agent
-from agent import classify_score, process_excel, search_product
+from agent import classify_score, clean_field, process_excel, search_product
 
 
 def test_classify_score_confident_match():
@@ -18,6 +18,16 @@ def test_classify_score_needs_review():
 def test_classify_score_not_found():
     assert classify_score(0.19) == "Item not found"
     assert classify_score(0.0) == "Item not found"
+
+
+def test_clean_field_treats_missing_values_as_empty():
+    assert clean_field(float('nan')) == ''
+    assert clean_field(None) == ''
+
+
+def test_clean_field_stringifies_and_strips_present_values():
+    assert clean_field('  Acme  ') == 'Acme'
+    assert clean_field(42) == '42'
 
 
 @pytest.fixture
@@ -121,3 +131,26 @@ def test_process_excel_row_loop_populates_result_columns(tmp_xlsx, tmp_path, mon
         'Found, no need for human review',
         'Item not found',
     ]
+
+
+def test_process_excel_treats_blank_cells_as_empty_not_literal_nan(tmp_xlsx, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(agent, 'sleep', lambda seconds: None)
+
+    input_file = tmp_xlsx({
+        'GeM Title': ['Widget X1'],
+        'GeM Brand': ['Acme'],
+        'GeM Model': [None],
+    })
+
+    calls = []
+
+    def fake_search_product(title, brand, model):
+        calls.append((title, brand, model))
+        return None, 0.0
+
+    monkeypatch.setattr(agent, 'search_product', fake_search_product)
+
+    process_excel(input_file)
+
+    assert calls == [('Widget X1', 'Acme', '')]

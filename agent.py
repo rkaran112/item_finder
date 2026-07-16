@@ -41,6 +41,16 @@ def search_product(title, brand, model):
 
 REQUIRED_COLUMNS = ('GeM Title', 'GeM Brand', 'GeM Model')
 
+def clean_field(value):
+    """Coerce a cell value to a search-safe string, treating blanks/NaN as empty.
+
+    pandas reads empty Excel cells as NaN, and str(NaN) is the literal
+    string "nan", which would otherwise pollute search queries.
+    """
+    if pd.isna(value):
+        return ''
+    return str(value).strip()
+
 def process_excel(input_file):
     print(f"Reading {input_file}...")
     try:
@@ -59,9 +69,9 @@ def process_excel(input_file):
     similarity_scores = []
     
     for index, row in df.iterrows():
-        title = str(row.get('GeM Title', ''))
-        brand = str(row.get('GeM Brand', ''))
-        model = str(row.get('GeM Model', ''))
+        title = clean_field(row.get('GeM Title', ''))
+        brand = clean_field(row.get('GeM Brand', ''))
+        model = clean_field(row.get('GeM Model', ''))
         
         print(f"Searching: {brand} - {model} - {title[:30]}...")
         # A simple delay to avoid rate limiting
