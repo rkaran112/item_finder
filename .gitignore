@@ -13,7 +13,7 @@ ENV/
 uploads/
 
 # Generated Excel Result files
-search_results_*.xlsx
+search_results*.xlsx
 
 # Environment variables
 .env
