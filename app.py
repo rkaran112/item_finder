@@ -116,6 +116,8 @@ def download(filename):
     # process_excel(), to prevent path traversal via arbitrary filenames.
     if not re.fullmatch(r'search_results_\d{8}_\d{6}\.xlsx', filename):
         return "Invalid filename.", 400
+    if not os.path.exists(filename):
+        return "File not found.", 404
     return send_file(filename, as_attachment=True)
 
 if __name__ == '__main__':

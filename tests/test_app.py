@@ -49,6 +49,13 @@ def test_download_rejects_non_matching_filenames(client, filename):
     assert response.status_code in (400, 404)
 
 
+def test_download_returns_404_for_missing_file(client):
+    # Matches the expected pattern but was never actually generated (e.g. a
+    # stale link after a restart) - should 404, not crash with a 500.
+    response = client.get('/download/search_results_20990101_120000.xlsx')
+    assert response.status_code == 404
+
+
 def test_download_accepts_expected_filename_pattern(client):
     filename = 'search_results_20240101_120000.xlsx'
     filepath = os.path.join(app.root_path, filename)
