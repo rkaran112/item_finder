@@ -14,6 +14,39 @@ def client():
         yield client
 
 
+def test_process_flashes_error_when_no_file_part(client):
+    response = client.post('/process', data={}, content_type='multipart/form-data', follow_redirects=True)
+
+    assert response.status_code == 200
+    assert b'No file part provided.' in response.data
+
+
+def test_process_flashes_error_when_no_file_selected(client):
+    data = {'file': (io.BytesIO(b''), '')}
+    response = client.post('/process', data=data, content_type='multipart/form-data', follow_redirects=True)
+
+    assert response.status_code == 200
+    assert b'No file selected.' in response.data
+
+
+def test_process_flashes_error_for_invalid_extension(client):
+    data = {'file': (io.BytesIO(b'dummy content'), 'Products.txt')}
+    response = client.post('/process', data=data, content_type='multipart/form-data', follow_redirects=True)
+
+    assert response.status_code == 200
+    assert b'Invalid file format' in response.data
+
+
+def test_process_flashes_error_when_process_excel_fails(client, monkeypatch):
+    monkeypatch.setattr(app_module, 'process_excel', lambda filepath: None)
+
+    data = {'file': (io.BytesIO(b'dummy content'), 'Products.xlsx')}
+    response = client.post('/process', data=data, content_type='multipart/form-data', follow_redirects=True)
+
+    assert response.status_code == 200
+    assert b'Error processing file' in response.data
+
+
 def test_process_accepts_uppercase_xlsx_extension(client, monkeypatch):
     monkeypatch.setattr(app_module, 'process_excel', lambda filepath: 'search_results_20240101_120000.xlsx')
 
