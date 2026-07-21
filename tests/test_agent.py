@@ -133,6 +133,43 @@ def test_process_excel_row_loop_populates_result_columns(tmp_xlsx, tmp_path, mon
     ]
 
 
+def test_main_uses_default_file_when_input_is_blank(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'sample_products.xlsx').write_text('placeholder')
+    monkeypatch.setattr('builtins.input', lambda prompt='': '')
+    calls = []
+    monkeypatch.setattr(agent, 'process_excel', lambda path: calls.append(path))
+
+    agent.main()
+
+    assert calls == ['sample_products.xlsx']
+
+
+def test_main_reports_error_and_skips_processing_for_missing_file(monkeypatch, tmp_path, capsys):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr('builtins.input', lambda prompt='': 'does_not_exist.xlsx')
+    calls = []
+    monkeypatch.setattr(agent, 'process_excel', lambda path: calls.append(path))
+
+    agent.main()
+
+    assert calls == []
+    assert "Could not find the file" in capsys.readouterr().out
+
+
+def test_main_processes_the_given_file_path(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    given_file = tmp_path / 'custom.xlsx'
+    given_file.write_text('placeholder')
+    monkeypatch.setattr('builtins.input', lambda prompt='': str(given_file))
+    calls = []
+    monkeypatch.setattr(agent, 'process_excel', lambda path: calls.append(path))
+
+    agent.main()
+
+    assert calls == [str(given_file)]
+
+
 def test_process_excel_treats_blank_cells_as_empty_not_literal_nan(tmp_xlsx, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(agent, 'sleep', lambda seconds: None)
