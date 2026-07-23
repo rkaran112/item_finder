@@ -64,8 +64,23 @@ def test_process_removes_uploaded_file_after_processing(client, monkeypatch):
     response = client.post('/process', data=data, content_type='multipart/form-data')
 
     assert response.status_code == 200
-    uploaded_path = os.path.join(app.config['UPLOAD_FOLDER'], 'Products.xlsx')
-    assert not os.path.exists(uploaded_path)
+    assert os.listdir(app.config['UPLOAD_FOLDER']) == []
+
+
+def test_process_gives_concurrent_uploads_of_the_same_filename_distinct_paths(client, monkeypatch):
+    seen_filepaths = []
+    monkeypatch.setattr(
+        app_module, 'process_excel',
+        lambda filepath: seen_filepaths.append(filepath) or 'search_results_20240101_120000.xlsx',
+    )
+
+    for _ in range(2):
+        data = {'file': (io.BytesIO(b'dummy content'), 'Products.xlsx')}
+        response = client.post('/process', data=data, content_type='multipart/form-data')
+        assert response.status_code == 200
+
+    assert len(seen_filepaths) == 2
+    assert seen_filepaths[0] != seen_filepaths[1]
 
 
 @pytest.mark.parametrize('filename', [

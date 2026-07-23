@@ -90,7 +90,10 @@ def process():
         return redirect(url_for('index'))
         
     if file and file.filename.lower().endswith('.xlsx'):
-        filename = secure_filename(file.filename)
+        # Prefix with a random token so concurrent uploads of the same
+        # filename can't collide on disk (one request overwriting or
+        # deleting the file another request is still processing).
+        filename = f"{secrets.token_hex(8)}_{secure_filename(file.filename)}"
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
